@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Lyric Manager (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Lyric Manager (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
