@@ -11,9 +11,243 @@
     Loaded="Page_Loaded"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+    <Grid Background="#202020">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="20*"/>
+                <ColumnDefinition Width="80*"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0"
+                  Background="#1a1a1a"
+                  CornerRadius="10">
+
+                <!-- Library Scan -->
+                <StackPanel Margin="10,10,10,10">
+                    <TextBlock Text="Library Search"
+                               FontSize="32"
+                               FontFamily="Arial"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,5"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                    <TextBlock Text="This will scan your added libraries and automatically search and download lyrics."
+                               HorizontalAlignment="Center"
+                               FontSize="16"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,10"
+                               TextAlignment="Center"
+                               FontFamily="Arial"/>
+                    <Button x:Name="LibraryScanButton"
+                            HorizontalAlignment="Center"
+                            IsEnabled="False"
+                            Margin="10,0,10,30"
+                            FontSize="16"
+                            Content="Scan Library Files"/>
+
+                    <!-- Search Bar -->
+                    <TextBlock Text="Manual Search"
+                               FontSize="32"
+                               FontFamily="Arial"
+                               HorizontalAlignment="Center"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               Margin="0,0,0,10"/>
+                    <TextBox x:Name="SearchBox"
+                             Margin="10,0,10,0"
+                             TextChanged="SearchBox_TextChanged"
+                             KeyDown="SearchBox_KeyDown"
+                             HorizontalAlignment="Stretch"/>
+                    <ProgressBar IsIndeterminate="True"
+                                 x:Name="ManualSearchProgress"
+                                 Visibility="Collapsed"
+                                 Foreground="White"
+                                 Margin="10">
+                    </ProgressBar>
+                </StackPanel>
+
+                <!-- App Buttons -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom">
+                    <Button Margin="10,10,10,10">
+                        <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" 
+                                  Glyph="&#xE946;" />
+                    </Button>
+                    <Button Margin="0,10,10,10">
+                        <SymbolIcon Symbol="Setting"/>
+                    </Button>
+                </StackPanel>
+
+            </Grid>
+
+            <Grid Grid.Column="1">
+
+                <TextBlock Text="No results found :("
+                           FontFamily="Arial"
+                           Canvas.ZIndex="8"
+                           x:Name="NoResultsText"
+                           FontSize="32"
+                           Visibility="Collapsed"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+                
+                <!-- Search Results -->
+                <Grid x:Name="ManualSearchPanel"
+                            Visibility="Collapsed">
+
+                    <TextBlock Text="Search Results:"
+                               FontFamily="Arial"
+                               Canvas.ZIndex="8"
+                               FontSize="32"
+                               Margin="0,20,0,0"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top"/>
+
+                    <ListView ItemsSource="{x:Bind ManualSearchResults}"
+                              x:Name="SearchListView"
+                              IsItemClickEnabled="True"
+                              SelectionMode="None"
+                              ItemClick="SearchListView_ItemClick"
+                              Margin="20,60,20,20">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="classes:Song">
+                                <ListViewItem Margin="0,0,0,5">
+                                    <Grid Margin="5,10,5,10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="auto"/>
+                                            <RowDefinition Height="auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="80*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <RelativePanel Grid.Row="0"
+                                                       Margin="0,5,0,0"
+                                                       Grid.Column="1">
+                                            <TextBlock Text="{x:Bind name}"
+                                                       FontSize="18"
+                                                       x:Name="SongNameText"
+                                                       FontFamily="Arial"/>
+                                            <TextBlock Text=" -"
+                                                       RelativePanel.RightOf="SongNameText"
+                                                       FontSize="18"
+                                                       x:Name="SADivider"
+                                                       FontFamily="Arial"/>
+                                            <TextBlock Text="{x:Bind artists[0].name}"
+                                                       RelativePanel.RightOf="SADivider"
+                                                       FontSize="18"
+                                                       Margin="5,0,0,0"
+                                                       FontFamily="Arial"/>
+                                        </RelativePanel>
+                                        <RelativePanel Grid.Row="1"
+                                                       Grid.Column="1"
+                                                       Margin="0,0,0,0">
+                                            <TextBlock Text="Album:"
+                                                       FontSize="16"
+                                                       x:Name="AlbumNameText"
+                                                       FontFamily="Arial"/>
+                                            <TextBlock Text="{x:Bind album.name}"
+                                                       RelativePanel.RightOf="AlbumNameText"
+                                                       FontSize="16"
+                                                       Margin="5,0,0,0"
+                                                       FontFamily="Arial"/>
+                                        </RelativePanel>
+                                    </Grid>
+                                </ListViewItem>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                </Grid>
+
+                <StackPanel x:Name="LibraryScanPanel"
+                            Margin="20"
+                            Visibility="Collapsed">
+                    <TextBlock Text="Scan Progress"
+                                   FontSize="16"
+                                   FontFamily="Arial"/>
+                    <ProgressBar IsIndeterminate="False"
+                                     Maximum="100"
+                                     Foreground="White"
+                                     Value="100"
+                                     Margin="0,0,0,0">
+                        <ProgressBar.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="3" />
+                        </ProgressBar.RenderTransform>
+                    </ProgressBar>
+                    <TextBlock Text="Music Files"
+                                   Margin="0,15,0,0"
+                                   FontSize="16"
+                                   FontFamily="Arial"/>
+                    <ProgressBar IsIndeterminate="False"
+                                     Maximum="100"
+                                     Foreground="Green"
+                                     Value="80"
+                                     Margin="-1,0,0,0"
+                                     Background="#4e804e">
+                        <ProgressBar.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="3" />
+                        </ProgressBar.RenderTransform>
+                    </ProgressBar>
+                    <TextBlock Text="Lyric Files"
+                                   Margin="0,15,0,0"
+                                   FontSize="16"
+                                   FontFamily="Arial"/>
+                    <ProgressBar IsIndeterminate="False"
+                                     Maximum="100"
+                                     Foreground="Red"
+                                     Value="18"
+                                     Margin="0,0,0,0"
+                                     Background="#ff6b6b">
+                        <ProgressBar.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="3" />
+                        </ProgressBar.RenderTransform>
+                    </ProgressBar>
+                </StackPanel>
+                
+            </Grid>
+            
+            <!-- Lyrics Preview -->
+            <Grid Grid.Column="2"
+                  HorizontalAlignment="Right"
+                  Background="#202020"
+                  Canvas.ZIndex="10">
+                <TextBox x:Name="LyricPreviewBox"
+                         VerticalAlignment="Stretch"
+                         HorizontalAlignment="Center"
+                         Margin="20"
+                         AcceptsReturn="true"
+                         IsReadOnly="True"
+                         Visibility="Collapsed"
+                         TextWrapping="Wrap"
+                         Width="300">
+                    <TextBox.RenderTransform>
+                        <TranslateTransform X="0"/>
+                    </TextBox.RenderTransform>
+                    <animations:Implicit.ShowAnimations>
+                        <animations:ScalarAnimation Target="Translation.X" Duration="0:0:0.3" To="0" From="400"/>
+                    </animations:Implicit.ShowAnimations>
+                    <animations:Implicit.HideAnimations>
+                        <animations:ScalarAnimation Target="Translation.X" Duration="0:0:0.3" To="400" From="0"/>
+                    </animations:Implicit.HideAnimations>
+                </TextBox>
+                <ProgressBar x:Name="LyricsPreviewProgress"
+                             Visibility="Collapsed"
+                             Margin="22,20,22,20"
+                             Foreground="White"
+                             VerticalAlignment="Bottom"
+                             IsIndeterminate="True"/>
+            </Grid>
+        </Grid>
+        
+        
+        <!-- OOB Popup -->
         <Grid x:Name="SetupBackgroundGrid"
-              Background="#73171717">
+              Visibility="Collapsed"
+              Background="#EE171717">
             <animations:Implicit.ShowAnimations>
                 <animations:OpacityAnimation Duration="0:0:0.3" From="0" To="1.0"></animations:OpacityAnimation>
             </animations:Implicit.ShowAnimations>
@@ -28,8 +262,9 @@
             <Border HorizontalAlignment="Center"
                     x:Name="SetupBorder"
                     VerticalAlignment="Center"
-                    Background="#171717"
+                    Background="#272727"
                     Grid.Column="1"
+                    MinHeight="300"
                     Visibility="Collapsed"
                     CornerRadius="10">
                 <animations:Implicit.ShowAnimations>
@@ -45,8 +280,9 @@
                     <animations:Vector3Animation Target="Offset"  Duration="0:0:0.3"></animations:Vector3Animation>
                 </animations:Implicit.Animations>
 
-                <StackPanel>
+                <Grid HorizontalAlignment="Center">
                     <BreadcrumbBar x:Name="SetupBreadcrumBar"
+                                   VerticalAlignment="Top"
                                         HorizontalAlignment="Center"
                                         Canvas.ZIndex="10"
                                         Margin="10"
@@ -60,7 +296,8 @@
                             </DataTemplate>
                         </BreadcrumbBar.ItemTemplate>
                     </BreadcrumbBar>
-                    <Pivot Margin="0,-60,0,0"
+                    <Pivot Margin="0,20,0,20"
+                           VerticalAlignment="Center"
                            x:Name="SetupPivot">
                         <!-- Welcome Panel -->
                         <PivotItem>
@@ -162,21 +399,7 @@
                                            HorizontalAlignment="Center"
                                            FontFamily="Arial"
                                            Margin="10,0,10,0"/>
-                                <CheckBox HorizontalAlignment="Center"
-                                          x:Name="DownloadsLibrarySaveCheckBox"
-                                          Click="DownloadsLibrarySaveCheckBox_Click">
-                                    <CheckBox.Content>
-                                        <TextBlock Text="Save with song when searching from your library"
-                                                   FontSize="16"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,0,7"/>
-                                    </CheckBox.Content>
-                                </CheckBox>
                                 <StackPanel HorizontalAlignment="Center">
-                                    <animations:Implicit.Animations>
-                                        <animations:SizeAnimation Duration="0:0:0.3"/>
-                                        <animations:Vector3Animation Target="Offset"  Duration="0:0:0.3"></animations:Vector3Animation>
-                                    </animations:Implicit.Animations>
                                     <Button x:Name="DownloadsSetButton"
                                             FontSize="16"
                                             Tapped="DownloadsSetButton_Tapped"
@@ -286,7 +509,7 @@
                             </StackPanel>
                         </PivotItem>
                     </Pivot>
-                </StackPanel>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

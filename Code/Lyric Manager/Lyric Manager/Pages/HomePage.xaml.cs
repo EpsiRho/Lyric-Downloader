@@ -33,6 +33,7 @@ namespace Lyric_Manager.Pages
         // Page Vars
         ObservableCollection<object> SetupBreadcrumbs = new ObservableCollection<object>();
         ObservableCollection<object> SetupLibraries = new ObservableCollection<object>();
+        ObservableCollection<object> ManualSearchResults = new ObservableCollection<object>();
 
         #region Page Loading
         public HomePage()
@@ -46,7 +47,13 @@ namespace Lyric_Manager.Pages
             if (SettingsManager.Settings == null)
             {
                 SetupBreadcrumbs.Add(new Crumb("Welcome", null));
+                SetupBackgroundGrid.Visibility = Visibility.Visible;
                 SetupBorder.Visibility = Visibility.Visible;
+            }
+
+            if (SettingsManager.Libraries.Count > 0)
+            {
+                LibraryScanButton.IsEnabled = true;
             }
         }
         #endregion Page Loading
@@ -72,8 +79,6 @@ namespace Lyric_Manager.Pages
 
         #endregion BreadCrumb Handling
 
-
-
         #region Next Buttons
         private void StartSetupButton_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -97,8 +102,6 @@ namespace Lyric_Manager.Pages
         }
 
         #endregion Next Buttons
-
-
 
         #region Libraries
         private async void LibrariesAddButton_Tapped(object sender, TappedRoutedEventArgs e)
@@ -132,8 +135,6 @@ namespace Lyric_Manager.Pages
 
         #endregion Libraries
 
-
-
         #region Downloads
         private async void DownloadsSetButton_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -151,28 +152,12 @@ namespace Lyric_Manager.Pages
                 DownloadsNextButton.Visibility = Visibility.Visible;
             }
         }
-        private void DownloadsLibrarySaveCheckBox_Click(object sender, RoutedEventArgs e)
-        {
-            if (DownloadsLibrarySaveCheckBox.IsChecked.Value)
-            {
-                DownloadDirectory.Text = "Add Folder";
-                DownloadsSetButton.IsEnabled = false;
-                DownloadsNextButton.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                DownloadsSetButton.IsEnabled = true;
-                DownloadsNextButton.Visibility = Visibility.Collapsed;
-            }
-        }
 
         #endregion Downloads
 
         #region Search
         // Nothing here yet, since only Music163 is supported for now.
         #endregion Search
-
-
 
         #region SavingSetup
         private void CloseSetupButton_Tapped(object sender, TappedRoutedEventArgs e)
@@ -184,25 +169,20 @@ namespace Lyric_Manager.Pages
 
         private void SaveSetupSettings()
         {
-            bool DownloadCheck = false;
             string DownloadDirText = "";
 
             this.DispatcherQueue.TryEnqueue(() =>
             {
-                DownloadCheck = DownloadsLibrarySaveCheckBox.IsChecked.Value;
                 DownloadDirText = DownloadDirectory.Text;
             });
-
-            if (DownloadCheck)
-            {
-                SettingsManager.AddSetting("DownloadFolder", "WithSong");
-            }
-            else
-            {
-                SettingsManager.AddSetting("DownloadFolder", DownloadDirText);
-            }
-
+            
+            SettingsManager.AddSetting("DownloadFolder", DownloadDirText);
             SettingsManager.AddSetting("EnableMusic163", "True");
+
+            if(SetupLibraries.Count > 0)
+            {
+                LibraryScanButton.IsEnabled = true;
+            }
 
             foreach(string lib in SetupLibraries)
             {
@@ -221,6 +201,96 @@ namespace Lyric_Manager.Pages
         #endregion SavingSetup
 
         #endregion OOB
+
+        #region Manual Search
+
+        private void SearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if(e.Key == Windows.System.VirtualKey.Enter)
+            {
+                SearchBox.IsEnabled = false;
+                ManualSearchResults.Clear();
+                LyricPreviewBox.Text = "";
+                NoResultsText.Visibility = Visibility.Collapsed;
+                LyricPreviewBox.Visibility = Visibility.Collapsed;
+                ManualSearchProgress.Visibility = Visibility.Visible;
+                ManualSearchPanel.Visibility = Visibility.Visible;
+                Thread t = new Thread(Search);
+                t.Start(SearchBox.Text);
+            }
+        }
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if(SearchBox.Text == "")
+            {
+                ManualSearchResults.Clear();
+                LyricPreviewBox.Text = "";
+                ManualSearchPanel.Visibility = Visibility.Collapsed;
+                LyricPreviewBox.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private async void Search(object Input)
+        {
+            var Results = await SearchHandler.SearchMusic163((string)Input);
+
+            if(Results.Count == 0)
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    NoResultsText.Visibility = Visibility.Visible;
+                });
+            }
+
+            foreach (var res in Results)
+            {
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    ManualSearchResults.Add(res);
+                });
+            }
+
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                SearchBox.IsEnabled = true;
+                ManualSearchProgress.Visibility = Visibility.Collapsed;
+            });
+        }
+        private void SearchListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            Song s = e.ClickedItem as Song;
+
+            if(SearchListView.SelectedItem == s)
+            {
+                LyricPreviewBox.Visibility = Visibility.Collapsed;
+                LyricsPreviewProgress.Visibility = Visibility.Collapsed;
+                SearchListView.SelectionMode = ListViewSelectionMode.None;
+            }
+            else
+            {
+                LyricPreviewBox.Text = "";
+                LyricPreviewBox.Visibility = Visibility.Visible;
+                LyricsPreviewProgress.Visibility = Visibility.Visible;
+                SearchListView.SelectionMode = ListViewSelectionMode.Single;
+                SearchListView.SelectedItem = s;
+                Thread t = new Thread(GetLyricsThreaded);
+                t.Start(s.id.ToString());
+            }
+        }
+
+        private async void GetLyricsThreaded(object SongId)
+        {
+            string lyrics = await SearchHandler.DownloadFromMusic163((string)SongId);
+
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                LyricPreviewBox.Text = lyrics;
+                LyricsPreviewProgress.Visibility = Visibility.Collapsed;
+            });
+        }
+
+
+        #endregion Manual Search
 
     }
 }
